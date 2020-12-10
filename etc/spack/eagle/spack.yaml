@@ -1,0 +1,22 @@
+spack:
+  view: false
+  packages:
+    all:
+      variants: +mpi+pic+shared build_type=Release
+  specs:
+    - cuda@9.2.148 %gcc@8.4.0
+    - cuda@10.2.89 %gcc@8.4.0
+    - cuda@11.0.2 %gcc@8.4.0
+    - matrix:
+        - [ cmake, mpi, m4, zlib, bzip2, libxml2, boost, superlu,
+            netlib-lapack, hdf5, netcdf-c, yaml-cpp, openfast,
+            "tioga",
+            "hypre",
+            "trilinos~cuda~wrapper",
+            "amr-wind~cuda",
+            "nalu-wind-utils",
+            "tioga-utils"
+            ]
+        - [ '%gcc@8.4.0', '%intel@18.0.4' ]
+    - "trilinos+cuda+wrapper cuda_arch=70 ^cuda@10.2.89"
+    - "amr-wind+cuda cuda_arch=70 ^cuda@10.2.89"

@@ -1,0 +1,14 @@
+spack:
+  view: false
+  specs:
+    - cmake
+    - mpi
+    - m4
+    - zlib
+    - libxml2
+    - boost
+    - superlu
+    - hdf5
+    - netcdf-c
+    - yaml-cpp
+    - hypre
