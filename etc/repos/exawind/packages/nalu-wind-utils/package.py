@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import sys
+import os
 from spack import *
 
 class NaluWindUtils(CMakePackage):
@@ -14,6 +15,10 @@ class NaluWindUtils(CMakePackage):
 
     maintainers = ['sayerhs', 'jrood-nrel']
 
+    generator = ('Ninja'
+                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+                 else 'Unix Makefiles')
+
     version('master', branch='master', submodules=True)
 
     variant('shared', default=(sys.platform != 'darwin'),
@@ -22,6 +27,10 @@ class NaluWindUtils(CMakePackage):
             description='Position independent code')
     variant('hypre', default=True,
             description='Compile with hypre support')
+
+    depends_on('ninja-fortran',
+               type='build',
+               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
 
     depends_on('mpi')
     depends_on('trilinos')

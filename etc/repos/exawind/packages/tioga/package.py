@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import sys
+import os
 from spack import *
 
 class Tioga(CMakePackage, CudaPackage):
@@ -13,8 +15,17 @@ class Tioga(CMakePackage, CudaPackage):
 
     maintainers = ['jsitaraman', 'sayerhs']
 
-    version('exawind', branch='exawind')
+    generator = ('Ninja'
+                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+                 else 'Unix Makefiles')
 
+    version('exawind', branch='exawind')
+    version('master', brach='master')
+
+    variant('shared', default=sys.platform != 'darwin',
+            description="Build shared libraries")
+    variant('pic', default=True,
+            description="Enable position independent code")
     variant('nodegid', default=True,
             description="Enable support for global Node IDs")
     variant('timers', default=False,
@@ -24,6 +35,10 @@ class Tioga(CMakePackage, CudaPackage):
     variant('cxxstd', default='11',
             values=('11', '14'), multi=False,
             description="C++ standard to use")
+
+    depends_on('ninja-fortran',
+               type='build',
+               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
 
     depends_on('mpi')
     depends_on('cuda@9.0.0:', when='+cuda')

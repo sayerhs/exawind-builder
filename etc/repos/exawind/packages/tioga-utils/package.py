@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import sys
+import os
 from spack import *
 
 class TiogaUtils(CMakePackage, CudaPackage):
@@ -14,6 +15,10 @@ class TiogaUtils(CMakePackage, CudaPackage):
 
     maintainers = ['sayerhs']
 
+    generator = ('Ninja'
+                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+                 else 'Unix Makefiles')
+
     version('exawind', branch='exawind', submodules=True)
 
     variant('shared', default=(sys.platform != 'darwin'),
@@ -22,6 +27,10 @@ class TiogaUtils(CMakePackage, CudaPackage):
             description="Position independent code")
     variant('nalu', default=False,
             description="Link to Nalu-Wind")
+
+    depends_on('ninja-fortran',
+               type='build',
+               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
 
     depends_on('cuda', when='+cuda')
     depends_on('kokkos-nvcc-wrapper', when='+cuda')

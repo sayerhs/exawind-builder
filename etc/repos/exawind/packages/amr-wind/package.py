@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import os
 from spack import *
 
 class AmrWind(CMakePackage, CudaPackage):
@@ -14,6 +15,10 @@ class AmrWind(CMakePackage, CudaPackage):
     maintainers = ['sayerhs', 'jrood-nrel', 'michaeljbrazell']
 
     version('development', branch='development', submodules=True)
+
+    generator = ('Ninja'
+                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+                 else 'Unix Makefiles')
 
     variant('unit', default=True,
             description="Build unit tests")
@@ -31,6 +36,10 @@ class AmrWind(CMakePackage, CudaPackage):
             description="Enable MASA integration")
     variant('internal-amrex', default=True,
             description="Use AMReX submodule to build")
+
+    depends_on('ninja-fortran',
+               type='build',
+               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
 
     depends_on('amrex', when='~internal-amrex')
     depends_on('mpi', when='+mpi')
