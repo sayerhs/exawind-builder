@@ -9,11 +9,6 @@ from spack.pkg.builtin.hypre import Hypre as HypreBase
 class Hypre(HypreBase, CudaPackage):
     """ExaWind specific fork of hypre package"""
 
-    variant('cuda', default=False,
-            description="Enable CUDA support")
-    variant('cuda_arch',
-            description='CUDA architecture', multi=False,
-            values=spack.variant.any_combination_of(*cuda_arch_values))
     variant('cuda-uvm', default=True,
             description="Enable CUDA UVM support")
     variant('curand', default=True,
@@ -33,8 +28,8 @@ class Hypre(HypreBase, CudaPackage):
         """
         # Reproduced from spack/var/spack/repos/builtin/packages/hypre
         # Note: --with-(lapack|blas)_libs= needs space separated list of names
-        lapack = spec['lapack'].libs
-        blas = spec['blas'].libs
+        lapack = self.spec['lapack'].libs
+        blas = self.spec['blas'].libs
 
         configure_args = [
             '--prefix=%s' % prefix,
@@ -50,20 +45,20 @@ class Hypre(HypreBase, CudaPackage):
             configure_args.append('--without-MPI')
 
         configure_args.append(
-            '--%s-openmp'%('enable' if '+openmp' in self.spec else 'disable'))
+            '--%s-openmp'%('with' if '+openmp' in self.spec else 'without'))
         configure_args.extend(
             self._cfg_opt_from_spec(vv)
             for vv in "mixedint complex shared debug".split())
 
         configure_args.append(
-            '--%s-cuda'%('enable' if '+cuda' in self.spec else 'disable'))
+            '--%s-cuda'%('with' if '+cuda' in self.spec else 'without'))
         if '+cuda' in self.spec:
             configure_args.extend([
                 self._cfg_opt_from_spec('curand'),
                 self._cfg_opt_from_spec('cub'),
             ])
 
-        if '+int64' in self.spec:
+        if '~cuda+int64' in self.spec:
             configure_args.append('--enable-bigint')
         else:
             configure_args.append('--disable-bigint')
@@ -84,16 +79,20 @@ class Hypre(HypreBase, CudaPackage):
         return configure_args
 
     def setup_build_environment(self, env):
-        env.set('CC', spec['mpi'].mpicc)
-        env.set('CXX', spec['mpi'].mpicxx)
-        env.set('F77', spec['mpi'].mpif77)
+        env.set('CC', self.spec['mpi'].mpicc)
+        env.set('CXX', self.spec['mpi'].mpicxx)
+        env.set('F77', self.spec['mpi'].mpif77)
 
         if '+cuda' in self.spec:
+            cuda_arch = self.spec.variants['cuda_arch'].value
+            if cuda_arch:
+                arch_sorted = list(sorted(cuda_arch, reverse=True))
+                env.set('HYPRE_CUDA_SM', arch_sorted[0])
             # In CUDA builds hypre currently doesn't handle flags correctly
             env.append_flags(
                 'CXXFLAGS', '-O2' if '~debug' in self.spec else '-g')
 
-    def install(self):
+    def install(self, spec, prefix):
         configure_args = self._configure_args()
         # Hypre's source is staged under ./src so we'll have to manually
         # cd into it.
