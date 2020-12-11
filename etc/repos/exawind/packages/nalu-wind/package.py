@@ -20,6 +20,10 @@ class NaluWind(CMakePackage, CudaPackage):
 
     maintainers = ['sayerhs', 'jrood-nrel']
 
+    generator = ('Ninja'
+                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+                 else 'Unix Makefiles')
+
     version('master', branch='master', submodules=True)
 
     variant('shared', default=sys.platform != 'darwin',
@@ -53,9 +57,13 @@ class NaluWind(CMakePackage, CudaPackage):
             values=_parse_float, multi=False,
             description="Relative tolerance for tests")
 
+    depends_on('ninja-fortran',
+               type='build',
+               when=(generator == 'Ninja'))
+
     depends_on('mpi')
     depends_on('kokkos-nvcc-wrapper', type='build', when='+cuda')
-    depends_on('trilinos+cuda+wrapper', when='+cuda')
+    depends_on('trilinos+cuda+cuda_rdc+wrapper', when='+cuda')
     depends_on('trilinos~cuda~wrapper', when='~cuda')
     depends_on('yaml-cpp@0.6.2:')
     depends_on('openfast+cxx', when='+openfast')
