@@ -169,3 +169,13 @@ packages:
       - spec: "zlib@1.2.11%intel@18.0.4"
         modules:
           - intel-18.0.4/zlib/1.2.11
+  python:
+    version: [3.7.7]
+    buildable: false
+    externals:
+      - spec: "python@3.7.7%gcc@8.4.0"
+        modules:
+          - python/3.7.7/fcjb
+      - spec: "python@3.7.7%intel@18.0.4"
+        modules:
+          - intel-18.0.4/python/3.7.7/mib4
