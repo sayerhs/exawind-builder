@@ -54,21 +54,23 @@ class NaluWind(CMakePackage, CudaPackage):
             description="Relative tolerance for tests")
 
     depends_on('mpi')
-    depends_on('kokkos-nvcc-wrapper', when='+cuda')
+    depends_on('kokkos-nvcc-wrapper', type='build', when='+cuda')
     depends_on('trilinos+cuda+wrapper', when='+cuda')
     depends_on('trilinos~cuda~wrapper', when='~cuda')
     depends_on('yaml-cpp@0.6.2:')
     depends_on('openfast+cxx', when='+openfast')
     depends_on('tioga', when='+tioga')
-    depends_on('hypre+mpi+shared+int64~superlu-dist', when='+hypre~cuda+shared')
-    depends_on('hypre+mpi~shared+int64~superlu-dist', when='+hypre~cuda~shared')
-    depends_on('hypre+mpi+shared~int64~superlu-dist@2.18.2:', when='+hypre+cuda+shared')
-    depends_on('hypre+mpi~shared~int64~superlu-dist@2.18.2:', when='+hypre+cuda~shared')
+    depends_on('hypre+mpi+int64~superlu-dist', when='+hypre~cuda')
+    depends_on('hypre+mpi~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
     depends_on('fftw', when='+fftw')
     depends_on('boost cxxstd=14', when='+boost')
 
     def cmake_args(self):
-        args = self.define_from_variant('CMAKE_POSITION_INDEPENDENT_CODE', 'pic')
+        args = [
+            self.define_from_variant('BUILD_SHARED_LIBS', 'shared'),
+            self.define_from_variant('CMAKE_POSITION_INDEPENDENT_CODE', 'pic'),
+            self.define('CMAKE_EXPORT_COMPILE_COMMANDS', True),
+        ]
         args.extend(
             self.define_from_variant("ENABLE_%s"%vv.upper(), vv)
             for vv in "cuda openfast tioga hypre fftw openmp boost tests".split())
