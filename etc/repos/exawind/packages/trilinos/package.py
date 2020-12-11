@@ -15,7 +15,7 @@ class Trilinos(TrilinosBase):
                  else 'Unix Makefiles')
 
     depends_on('ninja-fortran',
-               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
+               when=(generator == 'Ninja'))
 
     def cmake_args(self):
         args = super(Trilinos, self).cmake_args()

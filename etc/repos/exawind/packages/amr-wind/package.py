@@ -39,7 +39,7 @@ class AmrWind(CMakePackage, CudaPackage):
 
     depends_on('ninja-fortran',
                type='build',
-               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
+               when=(generator == 'Ninja'))
 
     depends_on('amrex', when='~internal-amrex')
     depends_on('mpi', when='+mpi')

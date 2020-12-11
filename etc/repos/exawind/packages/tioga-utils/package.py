@@ -30,7 +30,7 @@ class TiogaUtils(CMakePackage, CudaPackage):
 
     depends_on('ninja-fortran',
                type='build',
-               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
+               when=(generator == 'Ninja'))
 
     depends_on('cuda', when='+cuda')
     depends_on('kokkos-nvcc-wrapper', when='+cuda')

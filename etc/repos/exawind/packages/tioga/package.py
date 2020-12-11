@@ -38,7 +38,7 @@ class Tioga(CMakePackage, CudaPackage):
 
     depends_on('ninja-fortran',
                type='build',
-               when=(os.environ.get('EXAWIND_MAKE_TYPE') == 'Ninja'))
+               when=(generator == 'Ninja'))
 
     depends_on('mpi')
     depends_on('cuda@9.0.0:', when='+cuda')
