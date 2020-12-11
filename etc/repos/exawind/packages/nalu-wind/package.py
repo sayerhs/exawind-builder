@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import sys
+import os
 from spack import *
 
 def _parse_float(val):
@@ -63,15 +64,21 @@ class NaluWind(CMakePackage, CudaPackage):
 
     depends_on('mpi')
     depends_on('kokkos-nvcc-wrapper', type='build', when='+cuda')
-    depends_on('trilinos+cuda+cuda_rdc+wrapper', when='+cuda')
     depends_on('trilinos~cuda~wrapper', when='~cuda')
     depends_on('yaml-cpp@0.6.2:')
     depends_on('openfast+cxx', when='+openfast')
     depends_on('tioga', when='+tioga')
     depends_on('hypre+mpi+int64~superlu-dist', when='+hypre~cuda')
-    depends_on('hypre+mpi~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
     depends_on('fftw', when='+fftw')
     depends_on('boost cxxstd=14', when='+boost')
+
+    depends_on('trilinos+cuda+cuda_rdc+wrapper', when='+cuda')
+    depends_on('hypre+mpi~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
+    for _arch in CudaPackage.cuda_arch_values:
+        depends_on('trilinos+cuda+cuda_rdc+wrapper cuda_arch=%s'%_arch,
+                   when='+cuda cuda_arch=%s'%_arch)
+        depends_on('hypre+mpi~int64~superlu-dist cuda_arch=%s @2.18.2:'%_arch,
+                   when='+hypre+cuda cuda_arch=%s'%_arch)
 
     def cmake_args(self):
         args = [
