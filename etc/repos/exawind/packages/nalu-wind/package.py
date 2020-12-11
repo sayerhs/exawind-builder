@@ -58,6 +58,8 @@ class NaluWind(CMakePackage, CudaPackage):
             values=_parse_float, multi=False,
             description="Relative tolerance for tests")
 
+    conflicts('+shared+cuda')
+
     depends_on('ninja-fortran',
                type='build',
                when=(generator == 'Ninja'))
@@ -77,7 +79,7 @@ class NaluWind(CMakePackage, CudaPackage):
     for _arch in CudaPackage.cuda_arch_values:
         depends_on('trilinos+cuda+cuda_rdc+wrapper cuda_arch=%s'%_arch,
                    when='+cuda cuda_arch=%s'%_arch)
-        depends_on('hypre+mpi~int64~superlu-dist cuda_arch=%s @2.18.2:'%_arch,
+        depends_on('hypre+mpi+cuda~int64~superlu-dist cuda_arch=%s @2.18.2:'%_arch,
                    when='+hypre+cuda cuda_arch=%s'%_arch)
 
     def cmake_args(self):
