@@ -74,10 +74,10 @@ class NaluWind(CMakePackage, CudaPackage):
     depends_on('fftw', when='+fftw')
     depends_on('boost cxxstd=14', when='+boost')
 
-    depends_on('trilinos+cuda+cuda_rdc+wrapper', when='+cuda')
+    depends_on('trilinos+cuda+cuda_rdc+wrapper~shared', when='+cuda')
     depends_on('hypre+mpi~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
     for _arch in CudaPackage.cuda_arch_values:
-        depends_on('trilinos+cuda+cuda_rdc+wrapper cuda_arch=%s'%_arch,
+        depends_on('trilinos+cuda+cuda_rdc+wrapper~shared cuda_arch=%s'%_arch,
                    when='+cuda cuda_arch=%s'%_arch)
         depends_on('hypre+mpi+cuda~int64~superlu-dist cuda_arch=%s @2.18.2:'%_arch,
                    when='+hypre+cuda cuda_arch=%s'%_arch)
