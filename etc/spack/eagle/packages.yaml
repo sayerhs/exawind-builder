@@ -45,7 +45,7 @@ packages:
     externals:
       - spec: "cmake@3.17.3%gcc@8.4.0"
         modules:
-          - gcc-8.4.0/cmake/3.17.3
+          - cmake/3.17.3
       - spec: "cmake@3.17.3%intel@18.0.4"
         modules:
           - intel-18.0.4/cmake/3.17.3
