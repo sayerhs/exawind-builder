@@ -33,8 +33,8 @@ class NaluWindUtils(CMakePackage):
                when=(generator == 'Ninja'))
 
     depends_on('mpi')
-    depends_on('trilinos')
-    depends_on('yaml-cpp')
+    depends_on('trilinos~cuda~wrapper')
+    depends_on('yaml-cpp@0.6.2:')
     depends_on('hypre', when='+hypre')
 
     conflicts('trilinos+cuda')
