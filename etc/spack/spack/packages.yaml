@@ -43,6 +43,8 @@ packages:
     version: [0.6.2]
   fftw:
     variants: +mpi+fma
+  ninja-fortran:
+    version: [1.9.0.2.g99df1]
   openfast:
     version: [develop]
     variants: +cxx
