@@ -55,7 +55,13 @@ class Tioga(CMakePackage, CudaPackage):
         ]
 
         if '+cuda' in self.spec:
-            args.append(self.define('TIOGA_CUDA_SM', self.spec['cuda_arch'].value))
+            args.append(self.define('CMAKE_CUDA_SEPARABLE_COMPILATION', True))
+
+            # Currently TIOGA only supports one device arch during specialization
+            cuda_arch = self.spec.variants['cuda_arch'].value
+            if cuda_arch:
+                arch_sorted = list(sorted(cuda_arch, reverse=True))
+                args.append(self.define('TIOGA_CUDA_SM', arch_sorted[0]))
 
         if 'darwin' in self.spec.architecture:
             args.append(self.define('CMAKE_MACOSX_RPATH', True))
