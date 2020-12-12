@@ -4,7 +4,16 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
+import itertools
 from spack import *
+
+def process_amrex_constraints():
+    """Map constraints when building with external AMReX"""
+    a1 = ['+', '~']
+    a2 = ['mpi', 'hypre', 'cuda']
+    a3 = [[x + y for x in a1] for y in a2]
+    for k in itertools.product(*a3):
+        yield ''.join(k)
 
 class AmrWind(CMakePackage, CudaPackage):
     """ExaWind AMR-Wind block-structured, incompressible solver"""
@@ -41,10 +50,14 @@ class AmrWind(CMakePackage, CudaPackage):
                type='build',
                when=(generator == 'Ninja'))
 
-    depends_on('amrex', when='~internal-amrex')
     depends_on('mpi', when='+mpi')
+    for opt in process_amrex_constraints():
+        depends_on('amrex'+opt+'@20.12:', when='~internal-amrex'+opt)
+    depends_on('hypre+mpi+int64~cuda@2.18.2:', when='+mpi~cuda+hypre')
+    depends_on('hypre~mpi+int64~cuda@2.18.2:', when='~mpi~cuda+hypre')
+    depends_on('hypre+mpi~int64+cuda@2.18.2:', when='+mpi+cuda+hypre')
+    depends_on('hypre~mpi~int64+cuda@2.18.2:', when='~mpi+cuda+hypre')
     depends_on('netcdf-c', when='+netcdf')
-    depends_on('hypre', when='+hypre')
     depends_on('masa', when='+masa')
 
     def process_cuda_args(self):
