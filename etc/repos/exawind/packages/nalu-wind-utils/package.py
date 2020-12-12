@@ -19,7 +19,7 @@ class NaluWindUtils(CMakePackage):
                  if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
                  else 'Unix Makefiles')
 
-    version('master', branch='master', submodules=True)
+    version('develop', branch='master', submodules=True)
 
     variant('shared', default=(sys.platform != 'darwin'),
             description='Build dependencies as shared libraries')

@@ -19,8 +19,8 @@ class Tioga(CMakePackage, CudaPackage):
                  if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
                  else 'Unix Makefiles')
 
-    version('exawind', branch='exawind')
-    version('master', brach='master')
+    version('develop', branch='exawind')
+    version('master', branch='master')
 
     variant('shared', default=sys.platform != 'darwin',
             description="Build shared libraries")

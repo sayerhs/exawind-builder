@@ -14,7 +14,7 @@ class AmrWind(CMakePackage, CudaPackage):
 
     maintainers = ['sayerhs', 'jrood-nrel', 'michaeljbrazell']
 
-    version('development', branch='development', submodules=True)
+    version('develop', branch='development', submodules=True)
 
     generator = ('Ninja'
                  if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
