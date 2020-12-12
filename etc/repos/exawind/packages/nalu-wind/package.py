@@ -25,7 +25,7 @@ class NaluWind(CMakePackage, CudaPackage):
                  if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
                  else 'Unix Makefiles')
 
-    version('master', branch='master', submodules=True)
+    version('develop', branch='master', submodules=True)
 
     variant('shared', default=sys.platform != 'darwin',
             description="Build shared libraries")
@@ -51,9 +51,6 @@ class NaluWind(CMakePackage, CudaPackage):
     variant('abs_tol', default=1.0e-15,
             values=float,
             description="Absolute tolerance for tests")
-    variant('abs_tol', default=1.0e-15,
-            values=_parse_float, multi=False,
-            description="Absolute tolerance for tests")
     variant('rel_tol', default=1.0e-12,
             values=_parse_float, multi=False,
             description="Relative tolerance for tests")
@@ -70,12 +67,12 @@ class NaluWind(CMakePackage, CudaPackage):
     depends_on('yaml-cpp@0.6.2:')
     depends_on('openfast+cxx', when='+openfast')
     depends_on('tioga', when='+tioga')
-    depends_on('hypre+mpi+int64~superlu-dist', when='+hypre~cuda')
+    depends_on('hypre+mpi+int64~superlu-dist@2.18.2:', when='+hypre~cuda')
     depends_on('fftw', when='+fftw')
     depends_on('boost cxxstd=14', when='+boost')
 
     depends_on('trilinos+cuda+cuda_rdc+wrapper~shared', when='+cuda')
-    depends_on('hypre+mpi~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
+    depends_on('hypre+mpi+cuda~int64~superlu-dist@2.18.2:', when='+hypre+cuda')
     for _arch in CudaPackage.cuda_arch_values:
         depends_on('trilinos+cuda+cuda_rdc+wrapper~shared cuda_arch=%s'%_arch,
                    when='+cuda cuda_arch=%s'%_arch)
@@ -87,18 +84,26 @@ class NaluWind(CMakePackage, CudaPackage):
             self.define_from_variant('BUILD_SHARED_LIBS', 'shared'),
             self.define_from_variant('CMAKE_POSITION_INDEPENDENT_CODE', 'pic'),
             self.define('CMAKE_EXPORT_COMPILE_COMMANDS', True),
+
+            # This is needed because of how nvcc_wrapper is handled
+            self.define('CMAKE_CXX_COMPILER', self.spec['mpi'].mpicxx),
+            self.define('CMAKE_C_COMPILER', self.spec['mpi'].mpicc),
+            self.define('CMAKE_Fortran_COMPILER', self.spec['mpi'].mpifc),
         ]
+
         args.extend(
             self.define_from_variant("ENABLE_%s"%vv.upper(), vv)
             for vv in "cuda openfast tioga hypre fftw openmp boost tests".split())
 
-        if 'darwin' in spec.architecture:
+        if 'darwin' in self.spec.architecture:
             options.append('-DCMAKE_MACOSX_RPATH:BOOL=ON')
 
-        if '+tests' in spec:
+        if '+tests' in self.spec:
             args.extend([
-                self.define('TEST_TOLERANCE', self.spec['abs_tol'].value),
-                self.define('TEST_REL_TOL', self.spec['rel_tol'].value),
+                self.define('TEST_TOLERANCE',
+                  self.spec.variants['abs_tol'].value),
+                self.define('TEST_REL_TOL',
+                  self.spec.variants['rel_tol'].value),
             ])
 
         return args
