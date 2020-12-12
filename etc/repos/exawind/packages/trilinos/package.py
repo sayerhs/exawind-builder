@@ -5,22 +5,33 @@
 
 import os
 from spack import *
+from spack.pkg.builtin.kokkos import Kokkos
 from spack.pkg.builtin.trilinos import Trilinos as TrilinosBase
 
 class Trilinos(TrilinosBase):
     """ExaWind Trilinos configuration"""
 
-    generator = ('Ninja'
-                 if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
-                 else 'Unix Makefiles')
+    depends_on('ninja-fortran')
 
-    depends_on('ninja-fortran',
-               when=(generator == 'Ninja'))
+    @property
+    def generator(self):
+        """Override generator to use Ninja
 
-    def cmake_args(self):
-        args = super(Trilinos, self).cmake_args()
+        However, handle the situation where VerifyFortran fails on Intel
+        compilers when using ninja.
+        """
+        gen_default = 'Unix Makefiles'
+        gen = ('Ninja'
+               if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
+               else gen_default)
+        return gen_default if '%intel' in self.spec else gen
+
+    @property
+    def std_cmake_args(self):
+        args = super(Trilinos, self).std_cmake_args
 
         if '%intel' in self.spec:
-            args.append(self.define('Trilinos_ENABLE_STKTools', False))
-
-        return args
+            return [aa for aa in args
+                    if not 'CMAKE_INSTALL_RPATH:STRING' in aa]
+        else:
+            return args
