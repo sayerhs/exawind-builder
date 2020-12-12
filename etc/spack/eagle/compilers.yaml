@@ -69,10 +69,10 @@ compilers:
       cxx: /nopt/nrel/ecom/hpacf/compilers/2020-07/spack/opt/spack/linux-centos7-skylake_avx512/gcc-8.4.0/gcc-8.4.0-2a3vha6hlw4xc5ja3jyhr7huzaxuw2kt/bin/g++
       f77: /nopt/nrel/ecom/hpacf/compilers/2020-07/spack/opt/spack/linux-centos7-skylake_avx512/gcc-8.4.0/gcc-8.4.0-2a3vha6hlw4xc5ja3jyhr7huzaxuw2kt/bin/gfortran
       fc:  /nopt/nrel/ecom/hpacf/compilers/2020-07/spack/opt/spack/linux-centos7-skylake_avx512/gcc-8.4.0/gcc-8.4.0-2a3vha6hlw4xc5ja3jyhr7huzaxuw2kt/bin/gfortran
-    flags:
-      cflags: -mtune=skylake-avx512 -march=skylake-avx512
-      cxxflags: -mtune=skylake-avx512 -march=skylake-avx512
-      fflags: -mtune=skylake-avx512 -march=skylake-avx512
+    # flags:
+    #   cflags: -mtune=skylake-avx512 -march=skylake-avx512
+    #   cxxflags: -mtune=skylake-avx512 -march=skylake-avx512
+    #   fflags: -mtune=skylake-avx512 -march=skylake-avx512
     spec: gcc@8.4.0
     target: x86_64
 - compiler:
@@ -113,10 +113,10 @@ compilers:
       cxx: /nopt/nrel/ecom/hpacf/compilers/2019-05-08/spack/opt/spack/linux-centos7-x86_64/gcc-4.8.5/intel-parallel-studio-cluster.2018.4-3j7jzdulz4afhdn72kyo72yxrq3blshb/compilers_and_libraries/linux/bin/intel64/icpc
       f77: /nopt/nrel/ecom/hpacf/compilers/2019-05-08/spack/opt/spack/linux-centos7-x86_64/gcc-4.8.5/intel-parallel-studio-cluster.2018.4-3j7jzdulz4afhdn72kyo72yxrq3blshb/compilers_and_libraries/linux/bin/intel64/ifort
       fc:  /nopt/nrel/ecom/hpacf/compilers/2019-05-08/spack/opt/spack/linux-centos7-x86_64/gcc-4.8.5/intel-parallel-studio-cluster.2018.4-3j7jzdulz4afhdn72kyo72yxrq3blshb/compilers_and_libraries/linux/bin/intel64/ifort
-    flags:
-      cflags: -xSKYLAKE-AVX512
-      cxxflags: -xSKYLAKE-AVX512
-      fflags: -xSKYLAKE-AVX512
+    # flags:
+    #   cflags: -xSKYLAKE-AVX512
+    #   cxxflags: -xSKYLAKE-AVX512
+    #   fflags: -xSKYLAKE-AVX512
     spec: intel@18.0.4
     target: x86_64
 - compiler:
