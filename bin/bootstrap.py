@@ -174,8 +174,12 @@ class Bootstrap:
         ensure_directory(spack_path + "/etc/spack/" + sys.platform)
 
         cfg_files = "config compilers packages".split()
-        src_base = self.exw_builder_dir + "/etc/spack/spack"
-        dst_base = spack_path + "/etc/spack/"
+        src_base = os.path.join(self.exw_builder_dir, "etc/spack/spack")
+        dst_base = os.path.join(spack_path, "etc/spack")
+
+        os.symlink(os.path.join(src_base, "repos.yaml"),
+                   os.path.join(dst_base, "repos.yaml"))
+
         for ff in cfg_files:
             fpath = os.path.join(src_base, ff + ".yaml")
             if os.path.exists(fpath):
