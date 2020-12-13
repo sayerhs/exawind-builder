@@ -202,3 +202,7 @@ class Bootstrap:
             subprocess.call([spack_exe, 'compiler', 'find'])
 
         self.spack_dir = spack_path
+
+if __name__ == "__main__":
+    boot = Bootstrap()
+    boot()
