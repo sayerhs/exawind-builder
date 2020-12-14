@@ -35,3 +35,18 @@ class Trilinos(TrilinosBase):
                     if not 'CMAKE_INSTALL_RPATH:STRING' in aa]
         else:
             return args
+
+    def setup_build_environment(self, env):
+        # Workaround for segfaults with IPO
+        if '%intel' in self.spec:
+            for cc in "CXX C F LD".split():
+                env.append_flags(cc + "FLAGS", '-no-ipo')
+
+    def cmake_args(self):
+        args = super(Trilinos, self).cmake_args()
+
+        if '%intel' in self.spec:
+            args.append(self.define(
+                'CMAKE_INSTALL_RPATH_USE_LINK_PATH', True))
+
+        return args
