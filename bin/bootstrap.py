@@ -11,12 +11,15 @@ import json
 import argparse
 import subprocess
 import shlex
+import textwrap
 from contextlib import contextmanager
 
 def abspath(pname):
     """Return the absolute path of the directory.
+
     This function expands the user home directory as well as any shell
     variables found in the path provided and returns an absolute path.
+
     Args:
         pname (path): Pathname to be expanded
     Returns:
@@ -28,6 +31,7 @@ def abspath(pname):
 
 def ensure_directory(dname):
     """Check if directory exists, if not, create it.
+
     Args:
         dname (path): Directory name to check for
     Returns:
@@ -41,6 +45,7 @@ def ensure_directory(dname):
 @contextmanager
 def working_directory(dname, create=False):
     """A with-block to execute code in a given directory.
+
     Args:
         dname (path): Path to the working directory.
         create (bool): If true, directory is created prior to execution
@@ -177,8 +182,12 @@ class Bootstrap:
         src_base = os.path.join(self.exw_builder_dir, "etc/spack/spack")
         dst_base = os.path.join(spack_path, "etc/spack")
 
-        os.symlink(os.path.join(src_base, "repos.yaml"),
-                   os.path.join(dst_base, "repos.yaml"))
+        repos_contents = """
+        repos:
+          - %s
+        """%os.path.join(self.exw_builder_dir, "etc/repos/exawind")
+        with open(os.path.join(spack_path, "etc/spack/repos.yaml"), 'w') as fh:
+            fh.write(textwrap.dedent(repos_contents))
 
         for ff in cfg_files:
             fpath = os.path.join(src_base, ff + ".yaml")
@@ -198,9 +207,11 @@ class Bootstrap:
             for dd in [dst_base, cfg_dst])
 
         if not have_compilers:
+            print("==> Setting up spack compilers")
             spack_exe = os.path.join(spack_path, "bin/spack")
             subprocess.call([spack_exe, 'compiler', 'find'])
 
+        print("==> Using spack instance: %s"%spack_path)
         self.spack_dir = spack_path
 
 if __name__ == "__main__":
