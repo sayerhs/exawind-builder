@@ -34,8 +34,6 @@ exawind_spack_env ()
     fi
     module use ${SPACK_ROOT}/share/spack/modules/$(${SPACK_EXE} arch)
 
-    source ${SPACK_ROOT}/share/spack/setup-env.sh
-
     echo "==> Using spack configuration: ${SPACK_ROOT}"
 }
 
