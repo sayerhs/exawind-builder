@@ -1,7 +1,7 @@
 packages:
   all:
     compiler:
-      - gcc
+      - gcc@7.4.0
     providers:
       mpi:
         - spectrum-mpi
@@ -98,3 +98,10 @@ packages:
       - spec: "pkgconf@1.5.4%gcc"
         modules:
           - pkgconf/1.5.4
+  python:
+    version: [3.7.0]
+    buildable: false
+    externals:
+      - spec: "python@3.7.0"
+        modules:
+          - python/3.7.0
