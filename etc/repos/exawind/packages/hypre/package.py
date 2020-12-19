@@ -16,7 +16,7 @@ class Hypre(HypreBase, CudaPackage):
     variant('cub', default=False,
             description="Enable CUB integration")
 
-    conflicts('+cuda +int64')
+    # conflicts('+cuda +int64')
 
     def _cfg_opt_from_spec(self, var):
         return '--%s-%s'%('enable' if '+'+var in self.spec else 'disable', var)
@@ -84,6 +84,8 @@ class Hypre(HypreBase, CudaPackage):
         env.set('F77', self.spec['mpi'].mpif77)
 
         if '+cuda' in self.spec:
+            env.set('CUDA_HOME', self.spec['cuda'].prefix)
+            env.set('CUDA_PATH', self.spec['cuda'].prefix)
             cuda_arch = self.spec.variants['cuda_arch'].value
             if cuda_arch:
                 arch_sorted = list(sorted(cuda_arch, reverse=True))
