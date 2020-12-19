@@ -13,7 +13,11 @@ def process_amrex_constraints():
     a2 = ['mpi', 'hypre', 'cuda']
     a3 = [[x + y for x in a1] for y in a2]
     for k in itertools.product(*a3):
-        yield ''.join(k)
+        if '+cuda' in k:
+            for arch in CudaPackage.cuda_arch_values:
+                yield ''.join(k) + " cuda_arch=%s"%arch
+        else:
+            yield ''.join(k)
 
 class AmrWind(CMakePackage, CudaPackage):
     """ExaWind AMR-Wind block-structured, incompressible solver"""
@@ -29,6 +33,8 @@ class AmrWind(CMakePackage, CudaPackage):
                  if os.environ.get('EXAWIND_MAKE_TYPE','').lower() == 'ninja'
                  else 'Unix Makefiles')
 
+    variant('shared', default=True,
+            description="Build shared libs")
     variant('unit', default=True,
             description="Build unit tests")
     variant('tests', default=True,
@@ -55,8 +61,11 @@ class AmrWind(CMakePackage, CudaPackage):
         depends_on('amrex'+opt+'@20.12:', when='~internal-amrex'+opt)
     depends_on('hypre+mpi+int64~cuda@2.18.2:', when='+mpi~cuda+hypre')
     depends_on('hypre~mpi+int64~cuda@2.18.2:', when='~mpi~cuda+hypre')
-    depends_on('hypre+mpi~int64+cuda@2.18.2:', when='+mpi+cuda+hypre')
-    depends_on('hypre~mpi~int64+cuda@2.18.2:', when='~mpi+cuda+hypre')
+    for arch in CudaPackage.cuda_arch_values:
+        depends_on('hypre+mpi~int64+cuda cuda_arch=%s @2.18.2:'%arch,
+                   when='+mpi+cuda+hypre cuda_arch=%s'%arch)
+        depends_on('hypre~mpi~int64+cuda cuda_arch=%s @2.18.2:'%arch,
+                   when='~mpi+cuda+hypre cuda_arch=%s'%arch)
     depends_on('netcdf-c', when='+netcdf')
     depends_on('masa', when='+masa')
 
@@ -89,7 +98,8 @@ class AmrWind(CMakePackage, CudaPackage):
         args += [
             define('CMAKE_EXPORT_COMPILE_COMMANDS', True),
             define('AMR_WIND_ENABLE_ALL_WARNINGS', True),
-            define('AMR_WIND_TEST_WITH_FCOMPARE', '+tests' in self.spec),
+            self.define_from_variant('BUILD_SHARED_LIBS', 'shared'),
+            self.define_from_variant('AMR_WIND_TEST_WITH_FCOMPARE', 'tests'),
         ]
 
         if '+cuda' in self.spec:
