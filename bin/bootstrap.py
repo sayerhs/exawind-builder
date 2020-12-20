@@ -178,7 +178,7 @@ class Bootstrap:
         print("==> Setting up spack environment")
         ensure_directory(spack_path + "/etc/spack/" + sys.platform)
 
-        cfg_files = "config compilers packages".split()
+        cfg_files = "config compilers packages modules".split()
         src_base = os.path.join(self.exw_builder_dir, "etc/spack/spack")
         dst_base = os.path.join(spack_path, "etc/spack")
 
@@ -194,13 +194,14 @@ class Bootstrap:
             if os.path.exists(fpath):
                 os.symlink(fpath, os.path.join(dst_base, ff + ".yaml"))
 
-        sname = 'osx' if sys.platform == 'darwin' else self.exw_system
-        cfg_src = os.path.join(self.exw_builder_dir, "etc/spack", sname)
-        cfg_dst = os.path.join(spack_path, "etc/spack", sys.platform)
-        for ff in cfg_files:
-            fpath = os.path.join(cfg_src, ff + ".yaml")
-            if os.path.exists(fpath):
-                os.symlink(fpath, os.path.join(cfg_dst, ff + ".yaml"))
+        if self.exw_system != "spack":
+            sname = 'osx' if sys.platform == 'darwin' else self.exw_system
+            cfg_src = os.path.join(self.exw_builder_dir, "etc/spack", sname)
+            cfg_dst = os.path.join(spack_path, "etc/spack", sys.platform)
+            for ff in cfg_files:
+                fpath = os.path.join(cfg_src, ff + ".yaml")
+                if os.path.exists(fpath):
+                    os.symlink(fpath, os.path.join(cfg_dst, ff + ".yaml"))
 
         have_compilers = any(
             os.path.exists(os.path.join(dd, "compilers.yaml"))
