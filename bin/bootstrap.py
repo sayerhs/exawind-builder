@@ -63,9 +63,11 @@ def working_directory(dname, create=False):
     finally:
         os.chdir(orig_dir)
 
-def clone_repo(repo, basedir, recursive=False):
+def clone_repo(repo, basedir, extra_git_args="", recursive=False):
     """Clone a repository"""
-    cmd = "git clone %s %s"%('--recurse-submodules' if recursive else '', repo)
+    cmd = "git clone %s %s %s"%(
+        '--recurse-submodules' if recursive else '',
+        extra_git_args, repo)
     print("==> Cloning repo: %s"%cmd)
     cmd_lst = shlex.split(cmd)
     with working_directory(basedir, create=False):
@@ -83,6 +85,12 @@ class Bootstrap:
 
     #: Default location for installing exawind project
     default_location = os.path.join(os.path.expanduser('~'), "exawind")
+
+    #: Default compiler option
+    default_compiler = 'apple-clang' if sys.platform == 'darwin' else 'gcc'
+
+    #: Default name for deps environment
+    deps_env = "exawind-deps"
 
     #: Git repo for exawind-builder
     exw_bld_repo = "https://github.com/exawind/exawind-builder.git"
@@ -109,12 +117,35 @@ class Bootstrap:
             help="Directory where exawind project is installed")
         parser.add_argument(
             '-s', '--system', default='spack',
-            help="System profile to configure")
+            help="System profile to configure (default: spack)")
+        parser.add_argument(
+            '-c', '--compiler', nargs='+',
+            help="Compiler(s) to setup (default: %s)"%self.default_compiler)
+        tpls = parser.add_mutually_exclusive_group()
+        tpls.add_argument(
+            '--no-install-deps', action='store_true',
+            help="Skip installation of dependencies")
+        tpls.add_argument(
+            '--spec-file', type=str, default=None,
+            help="Use custom spack spec file for installing TPLs")
+        parser.add_argument(
+            '-j', '--num-jobs', type=int, default=0,
+            help="Number of build jobs when installing deps")
 
     def __call__(self):
         self.init_project()
         self.check_system()
         self.setup_spack()
+        self.activate_python_env()
+        self.spack_setup_compilers()
+        self.spack_apply_patch()
+
+        if self.args.no_install_deps:
+            print("==> Skipping installation of dependencies")
+            return
+
+        # Handle dependency installation
+        self.install_dependencies()
 
     def init_project(self):
         """Create a skeleton directory structure and fetch exawind-builder"""
@@ -166,7 +197,8 @@ class Bootstrap:
         # Spack directory exists from a previous clone
         spack_path = os.path.join(self.exawind_dir, 'spack')
         if not os.path.exists(spack_path):
-            success = clone_repo(self.spack_repo, self.exawind_dir)
+            success = clone_repo(self.spack_repo, self.exawind_dir,
+                                 "-c advice.detachedHead=false --depth 1")
             if not success:
                 print("==> ERROR: Cannot clone spack")
                 self.parser.exit(1)
@@ -194,26 +226,90 @@ class Bootstrap:
             if os.path.exists(fpath):
                 os.symlink(fpath, os.path.join(dst_base, ff + ".yaml"))
 
-        if self.exw_system != "spack":
-            sname = 'osx' if sys.platform == 'darwin' else self.exw_system
-            cfg_src = os.path.join(self.exw_builder_dir, "etc/spack", sname)
-            cfg_dst = os.path.join(spack_path, "etc/spack", sys.platform)
+        sname = 'osx' if sys.platform == 'darwin' else self.exw_system
+        cfg_src = os.path.join(self.exw_builder_dir, "etc/spack", sname)
+        cfg_dst = os.path.join(spack_path, "etc/spack", sys.platform)
+        if sname != "spack":
             for ff in cfg_files:
                 fpath = os.path.join(cfg_src, ff + ".yaml")
                 if os.path.exists(fpath):
                     os.symlink(fpath, os.path.join(cfg_dst, ff + ".yaml"))
 
-        have_compilers = any(
-            os.path.exists(os.path.join(dd, "compilers.yaml"))
-            for dd in [dst_base, cfg_dst])
-
-        if not have_compilers:
-            print("==> Setting up spack compilers")
-            spack_exe = os.path.join(spack_path, "bin/spack")
-            subprocess.call([spack_exe, 'compiler', 'find'])
-
         print("==> Using spack instance: %s"%spack_path)
         self.spack_dir = spack_path
+
+    def activate_python_env(self):
+        """Activate ExaWind builder and spack python modules"""
+        print("==> Activating spack python modules")
+        spack_prefix = self.spack_dir
+        spack_lib_path = os.path.join(spack_prefix, "lib", "spack")
+        sys.path.insert(0, spack_lib_path)
+        spack_external_libs = os.path.join(spack_lib_path, "external")
+        sys.path.insert(0, spack_external_libs)
+
+        print("==> Activating ExaWind builder python modules")
+        exwbld_bin = os.path.dirname(__file__)
+        exwbld_dir = os.path.dirname(exwbld_bin)
+        sys.path.insert(0, os.path.join(exwbld_dir, "python"))
+
+    def spack_setup_compilers(self):
+        """Ask spack to detect compilers if no pre-existing compilers exist"""
+        import spack.config
+        scopes = spack.config.scopes().values()
+        if any(ff.get_section("compilers") for ff in scopes):
+            print("==> Found compiler definitions, skipping 'compiler find'")
+        else:
+            print("==> No existing compilers, using 'spack compiler find'")
+            from exwbld import cmd
+            cmd.spack_cmd("compiler", ["find"])
+
+    def spack_apply_patch(self):
+        """Apply any necessary patches for spack on certain systems"""
+        sname = 'osx' if sys.platform == 'darwin' else self.exw_system
+        patch_path = os.path.join(
+            self.exw_builder_dir, "etc", "spack", sname, "spack.patch")
+        if not os.path.exists(patch_path):
+            return
+
+        from spack.util.executable import which
+        with working_directory(self.spack_dir) as wdir:
+            git = which("git", required=True)
+            git_out = git('describe', '--tags', '--dirty', output=str)
+            if (git.returncode == 0) and "dirty" in git_out:
+                return
+
+            print("==> Patching spack for machine: %s"%sname)
+            patch = which("patch", required=True)
+            patch('-s', '-p1', '-i', patch_path, '-d', wdir)
+
+    def install_dependencies(self):
+        """Create a spack environment for installing dependencies"""
+        import spack.environment as ev
+        from exwbld import cmd
+        args = self.args
+        env_name = self.deps_env
+        default_deps_spec = os.path.join(
+            self.exw_builder_dir, "etc", "spack", "spack", "spack.yaml")
+        user_spec_file = abspath(args.spec_file) if args.spec_file else ""
+        if user_spec_file and os.path.exists(user_spec_file):
+            spec_file = user_spec_file
+        else:
+            spec_file = default_deps_spec
+
+        if not ev.exists(env_name):
+            print("==> Creating exawind deps environment: %s"%env_name)
+            print("==> Using spec file: %s"%spec_file)
+            cmd.spack_cmd("env", [
+                "create",
+                "--without-view",
+                env_name,
+                spec_file
+            ])
+        os.environ['EXAWIND_SPACK_COMPILER'] = (
+            ' '.join(args.compiler) if args.compiler else self.default_compiler)
+        cmd.spack_cmd("concretize", ['-f'], env=env_name)
+        cmd.spack_cmd("install", [], env=env_name)
+        self.deps_env_name = env_name
 
 if __name__ == "__main__":
     boot = Bootstrap()
