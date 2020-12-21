@@ -3,18 +3,17 @@ spack:
   packages:
     all:
       variants: +mpi+pic build_type=Release
+  definitions:
+    - compilers: [ '%gcc' ]
+      when: "'gcc' in env.get('EXAWIND_SPACK_COMPILER', '').split()"
+    - compilers: [ '%intel' ]
+      when: "'intel' in env.get('EXAWIND_SPACK_COMPILER', '').split()"
+    - compilers: [ '%clang' ]
+      when: "'clang' in env.get('EXAWIND_SPACK_COMPILER', '').split()"
+    - compilers: [ '%apple-clang' ]
+      when: "'apple-clang' in env.get('EXAWIND_SPACK_COMPILER', '').split()"
   specs:
-    - cmake
-    - ninja-fortran
-    - mpi
-    - m4
-    - zlib
-    - bzip2
-    - libxml2
-    - boost
-    - netlib-lapack
-    - superlu
-    - hdf5
-    - netcdf-c
-    - yaml-cpp
-    - hypre
+    - matrix:
+        - [ cmake, ninja-fortran, mpi, m4, zlib, bzip2, libxml2, boost, superlu,
+            netlib-lapack, hdf5, netcdf-c, yaml-cpp, hypre, tioga, openfast ]
+        - [ $compilers ]
