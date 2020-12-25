@@ -121,6 +121,9 @@ class Bootstrap:
         parser.add_argument(
             '-c', '--compiler', nargs='+',
             help="Compiler(s) to setup (default: %s)"%self.default_compiler)
+        parser.add_argument(
+            '--no-install-scripts', action='store_true',
+            help="Skip installation of build scripts")
         tpls = parser.add_mutually_exclusive_group()
         tpls.add_argument(
             '--no-install-deps', action='store_true',
@@ -140,12 +143,9 @@ class Bootstrap:
         self.spack_setup_compilers()
         self.spack_apply_patch()
 
-        if self.args.no_install_deps:
-            print("==> Skipping installation of dependencies")
-            return
-
         # Handle dependency installation
         self.install_dependencies()
+        self.create_build_scripts()
 
     def init_project(self):
         """Create a skeleton directory structure and fetch exawind-builder"""
@@ -284,6 +284,10 @@ class Bootstrap:
 
     def install_dependencies(self):
         """Create a spack environment for installing dependencies"""
+        if self.args.no_install_deps:
+            print("==> Skipping installation of dependencies")
+            return
+
         import spack.environment as ev
         from exwbld import cmd
         args = self.args
@@ -310,6 +314,42 @@ class Bootstrap:
         cmd.spack_cmd("concretize", ['-f'], env=env_name)
         cmd.spack_cmd("install", [], env=env_name)
         self.deps_env_name = env_name
+
+    def create_build_scripts(self):
+        """Create all shell scripts for building projects"""
+        if self.args.no_install_scripts:
+            print("==> Skipping installation of exawind build scripts")
+            return
+
+        from exwbld import paths
+        args = dict(
+            exawind_dir=self.exawind_dir,
+            exawind_builder_dir=self.exw_builder_dir,
+            system=self.exw_system)
+        compiler = (self.args.compiler
+                    if self.args.compiler
+                    else [ self.default_compiler ])
+
+        # Get a list of projects
+        with working_directory(os.path.join(self.exw_builder_dir, 'codes')):
+            files = glob.glob('*.bash')
+
+        escript = paths.get_template("env_script.sh")
+        bscript = paths.get_template("build_script.sh")
+        codes = (os.path.splitext(ff)[0] for ff in sorted(files))
+        with working_directory(os.path.join(self.exawind_dir, "scripts")):
+            for cc in compiler:
+                env_out = "exawind-config-%s.sh"%cc
+                print("==> Creating environment script: %s"%env_out)
+                with open(env_out, 'w') as efh:
+                    efh.write(escript.render(**args))
+
+                for prj in codes:
+                    args['project'] = prj
+                    fname = "%s-%s.sh"%(prj, cc)
+                    print("==> Creating build script: %s"%fname)
+                    with open(fname, 'w') as fh:
+                        fh.write(bscript.render(**args))
 
 if __name__ == "__main__":
     boot = Bootstrap()
