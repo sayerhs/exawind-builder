@@ -260,8 +260,8 @@ class Bootstrap:
             print("==> Found compiler definitions, skipping 'compiler find'")
         else:
             print("==> No existing compilers, using 'spack compiler find'")
-            from exwbld import cmd
-            cmd.spack_cmd("compiler", ["find"])
+            from exwbld import spack_wrappers as spwrap
+            spwrap.spack_cmd("compiler", ["find"])
 
     def spack_apply_patch(self):
         """Apply any necessary patches for spack on certain systems"""
@@ -289,7 +289,7 @@ class Bootstrap:
             return
 
         import spack.environment as ev
-        from exwbld import cmd
+        from exwbld import spack_wrappers as spwrap
         args = self.args
         env_name = self.deps_env
         default_deps_spec = os.path.join(
@@ -303,7 +303,7 @@ class Bootstrap:
         if not ev.exists(env_name):
             print("==> Creating exawind deps environment: %s"%env_name)
             print("==> Using spec file: %s"%spec_file)
-            cmd.spack_cmd("env", [
+            spwrap.spack_cmd("env", [
                 "create",
                 "--without-view",
                 env_name,
@@ -311,8 +311,8 @@ class Bootstrap:
             ])
         os.environ['EXAWIND_SPACK_COMPILER'] = (
             ' '.join(args.compiler) if args.compiler else self.default_compiler)
-        cmd.spack_cmd("concretize", ['-f'], env=env_name)
-        cmd.spack_cmd("install", [], env=env_name)
+        spwrap.spack_cmd("concretize", ['-f'], env=env_name)
+        spwrap.spack_cmd("install", [], env=env_name)
         self.deps_env_name = env_name
 
     def create_build_scripts(self):
